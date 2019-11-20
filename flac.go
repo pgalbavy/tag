@@ -103,7 +103,7 @@ func (m *metadataFLAC) readStreamInfoBlock(r io.ReadSeeker) error {
 	m.sampleRate		= uint(streamInfo >> 12)
 	m.channels		= uint((streamInfo >> 9) & 0x7) + 1
 	m.bitDepth		= uint((streamInfo >> 4) & 0x1f) + 1
-	m.samples		= uint64(streamInfo2)<<4 + uint64(streamInfo & 0xf)
+	m.samples		= uint64(streamInfo & 0xf) << 32 + uint64(streamInfo2) 
 
 	m.flacmd5, err = readBytes(r, 16)
 
