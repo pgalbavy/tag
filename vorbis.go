@@ -160,7 +160,11 @@ func (m *metadataVorbis) Format() Format {
 }
 
 func (m *metadataVorbis) Raw() map[string]interface{} {
-	raw := make(map[string]interface{}, len(m.c))
+	raw := make(map[string]interface{}, len(m.c) + 4)
+	raw["_sampleRate"] = m.sampleRate
+	raw["_samples"] = m.samples
+	raw["_bitdepth"] = m.bitDepth
+	raw["_channels"] = m.channels
 	for k, v := range m.c {
 		raw[k] = v
 	}

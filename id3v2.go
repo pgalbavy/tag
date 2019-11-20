@@ -396,6 +396,17 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
+	// check if this is actually a FLAC file first
+	// if it is, pass back the reader at the start of the FLAC section else restore
+	// offset and carry on
+	_, err = r.Seek(int64(h.Size), io.SeekCurrent)
+	b, err := readString(r, 4)
+	if (b == "fLaC") {
+		_, err = r.Seek(-4, io.SeekCurrent)
+		return nil, nil
+	}
+	_, err = r.Seek(-int64(h.Size), io.SeekCurrent)
+
 	var ur io.Reader = r
 	if h.Unsynchronisation {
 		ur = &unsynchroniser{Reader: r}
@@ -405,7 +416,20 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	return metadataID3v2{header: h, frames: f}, nil
+
+	mp3, err := getMp3Infos(r, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var channels uint = 2
+	if mp3.Mode == "Mono" {
+		channels = 1
+	}
+
+	samples := uint64(mp3.Length) * uint64(mp3.Sampling)
+
+	return metadataID3v2{sampleRate: mp3.Sampling, bitDepth: 16, channels: channels, samples: samples, header: h, frames: f}, nil
 }
 
 var id3v2genreRe = regexp.MustCompile(`(.*[^(]|.* |^)\(([0-9]+)\) *(.*)$`)

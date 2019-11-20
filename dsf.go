@@ -32,6 +32,69 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 	}
 	id3Pointer := getIntLittleEndian(n4)
 
+	fmt, err := readString(r, 4)
+	if err != nil {
+		return nil, err
+	}
+	if fmt != "fmt " {
+		return nil, errors.New("expected 'fmt '")
+	}
+
+	n4, err = readBytes(r, 8)
+	if err != nil {
+		return nil, err
+	}
+	fsize := getIntLittleEndian(n4)
+
+	if fsize != 52 {
+		return nil, errors.New("fmt section not 52 bytes long")
+	}
+
+	fmtVersion, err := readUint32LittleEndian(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if fmtVersion != 1 {
+		return nil, errors.New("fmt version != 1")
+	}
+
+	// skip Format ID and Channel Type
+	_, err = r.Seek(8, io.SeekCurrent)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := readUint32LittleEndian(r)
+	if err != nil {
+		return nil, err
+	}
+	channels := uint(v)
+
+	v, err = readUint32LittleEndian(r)
+	if err != nil {
+		return nil, err
+	}
+	sampleRate := uint(v)
+
+	v, err = readUint32LittleEndian(r)
+	if err != nil {
+		return nil, err
+	}
+	bitDepth := uint(v)
+
+	samplesLW, err := readUint32LittleEndian(r)
+	if err != nil {
+		return nil, err
+	}
+
+	samplesHW, err := readUint32LittleEndian(r)
+	if err != nil {
+		return nil, err
+	}
+
+	samples := uint64(samplesHW << 32 + samplesLW)
+
 	_, err = r.Seek(int64(id3Pointer), io.SeekStart)
 	if err != nil {
 		return nil, err
@@ -42,10 +105,16 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	return metadataDSF{id3}, nil
+	return metadataDSF{sampleRate, channels, bitDepth, samples, id3}, nil
 }
 
 type metadataDSF struct {
+	// audio data
+	sampleRate uint
+	channels uint
+	bitDepth uint
+	samples uint64
+
 	id3 Metadata
 }
 
@@ -106,19 +175,22 @@ func (m metadataDSF) Comment() string {
 }
 
 func (m metadataDSF) SampleRate() uint {
-	return 0
+	return m.sampleRate
 }
 
 func (m metadataDSF) Channels() uint {
-	return 0
+	return m.channels
 }
 
 func (m metadataDSF) BitDepth() uint {
-	return 0
+	return m.bitDepth
 }
 
 func (m metadataDSF) Duration() uint {
-	return 0
+	if m.sampleRate == 0 {
+		return 0
+	}
+	return uint(m.samples / uint64(m.sampleRate))
 }
 
 func (m metadataDSF) FLACMD5Sum() *[8]byte {

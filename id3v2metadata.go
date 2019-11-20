@@ -48,6 +48,12 @@ var frames = frameNames(map[string][2]string{
 
 // metadataID3v2 is the implementation of Metadata used for ID3v2 tags.
 type metadataID3v2 struct {
+	// audio data
+	sampleRate uint
+	channels uint
+	bitDepth uint
+	samples uint64
+
 	header *id3v2Header
 	frames map[string]interface{}
 }
@@ -141,17 +147,20 @@ func (m metadataID3v2) Picture() *Picture {
 }
 
 func (m metadataID3v2) Channels() uint {
-	return 0
+	return m.channels
 }
 
 func (m metadataID3v2) SampleRate() uint {
-	return 0
+	return m.sampleRate
 }
 
 func (m metadataID3v2) BitDepth() uint {
-	return 0
+	return 16
 }
 
 func (m metadataID3v2) Duration() uint {
-	return 0
+	if m.sampleRate == 0 {
+		return 0
+	}
+	return uint(m.samples / uint64(m.sampleRate))
 }
