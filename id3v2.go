@@ -403,7 +403,7 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	b, err := readString(r, 4)
 	if (b == "fLaC") {
 		_, err = r.Seek(-4, io.SeekCurrent)
-		return nil, nil
+		return ReadFLACTags(r)
 	}
 	_, err = r.Seek(-int64(h.Size), io.SeekCurrent)
 
@@ -417,17 +417,17 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	mp3, err := getMp3Infos(r, false)
-	if err != nil {
-		return nil, err
-	}
-
 	var channels uint = 2
-	if mp3.Mode == "Mono" {
-		channels = 1
-	}
+	var samples uint64 = 0
 
-	samples := uint64(mp3.Length) * uint64(mp3.Sampling)
+	mp3, err := getMp3Infos(r, false)
+	if err == nil {
+		if mp3.Mode == "Mono" {
+			channels = 1
+		}
+
+		samples = uint64(mp3.Length) * uint64(mp3.Sampling)
+	}
 
 	return metadataID3v2{sampleRate: mp3.Sampling, bitDepth: 16, channels: channels, samples: samples, header: h, frames: f}, nil
 }

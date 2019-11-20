@@ -49,12 +49,7 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 		return ReadAtoms(r)
 
 	case string(b[0:3]) == "ID3":
-		// some FLAC files may have ID3 headers, check and skip
-		m, err := ReadID3v2Tags(r)
-		if err == nil {
-			return ReadFLACTags(r)
-		}
-		return m, err
+		return ReadID3v2Tags(r)
 
 	case string(b[0:4]) == "DSD ":
 		return ReadDSFTags(r)
