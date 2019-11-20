@@ -142,3 +142,8 @@ func (metadataID3v1) Disc() (int, int)      { return 0, 0 }
 func (m metadataID3v1) Picture() *Picture   { return nil }
 func (m metadataID3v1) Lyrics() string      { return "" }
 func (m metadataID3v1) Comment() string     { return m["comment"].(string) }
+
+func (m metadataID3v1) Channels() uint       { return 0 }
+func (m metadataID3v1) SampleRate() uint     { return 0 }
+func (m metadataID3v1) BitDepth() uint       { return 0 }
+func (m metadataID3v1) Duration() uint       { return 0 }

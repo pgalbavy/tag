@@ -139,3 +139,19 @@ func (m metadataID3v2) Picture() *Picture {
 	}
 	return v.(*Picture)
 }
+
+func (m metadataID3v2) Channels() uint {
+	return 0
+}
+
+func (m metadataID3v2) SampleRate() uint {
+	return 0
+}
+
+func (m metadataID3v2) BitDepth() uint {
+	return 0
+}
+
+func (m metadataID3v2) Duration() uint {
+	return 0
+}

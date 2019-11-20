@@ -15,11 +15,21 @@ import (
 
 func newMetadataVorbis() *metadataVorbis {
 	return &metadataVorbis{
+		sampleRate: 0,
+		channels: 0,
+		bitDepth: 0,
+		samples: 0,
 		c: make(map[string]string),
 	}
 }
 
 type metadataVorbis struct {
+	// audio data
+	sampleRate uint
+	channels uint
+	bitDepth uint
+	samples uint64
+
 	c map[string]string // the vorbis comments
 	p *Picture
 }
@@ -252,4 +262,24 @@ func (m *metadataVorbis) Comment() string {
 
 func (m *metadataVorbis) Picture() *Picture {
 	return m.p
+}
+
+func (m *metadataVorbis) SampleRate() uint {
+	return 0
+}
+
+func (m *metadataVorbis) Channels() uint {
+	return 0
+}
+
+func (m *metadataVorbis) BitDepth() uint {
+	return 0
+}
+
+func (m *metadataVorbis) Duration() uint {
+	return 0
+}
+
+func (m *metadataVorbis) FLACMD5Sum() *[8]byte {
+	return nil
 }

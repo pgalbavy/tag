@@ -14,7 +14,7 @@ type blockType byte
 
 // FLAC block types.
 const (
-	// Stream Info Block           0
+	streamInfoBlock    blockType = 0
 	// Padding Block               1
 	// Application Block           2
 	// Seektable Block             3
@@ -35,7 +35,7 @@ func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	m := &metadataFLAC{
-		newMetadataVorbis(),
+		newMetadataVorbis(), nil,
 	}
 
 	for {
@@ -53,6 +53,8 @@ func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
 
 type metadataFLAC struct {
 	*metadataVorbis
+
+	flacmd5 []byte
 }
 
 func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
@@ -72,6 +74,9 @@ func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err er
 	}
 
 	switch blockType(blockHeader[0]) {
+	case streamInfoBlock:
+		err = m.readStreamInfoBlock(r)
+
 	case vorbisCommentBlock:
 		err = m.readVorbisComment(r)
 
@@ -84,6 +89,50 @@ func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err er
 	return
 }
 
+func (m *metadataFLAC) readStreamInfoBlock(r io.ReadSeeker) error {
+	// skip 10 bytes
+	_, err := r.Seek(10, io.SeekCurrent);
+	if err != nil {
+		return err
+	}
+
+	// FLAC encodes non-Vorbis comments as Big Endian
+	streamInfo, err := readUint32BigEndian(r)
+	streamInfo2, err := readUint32BigEndian(r)
+
+	m.sampleRate		= uint(streamInfo >> 12)
+	m.channels		= uint((streamInfo >> 9) & 0x7) + 1
+	m.bitDepth		= uint((streamInfo >> 4) & 0x1f) + 1
+	m.samples		= uint64(streamInfo2)<<4 + uint64(streamInfo & 0xf)
+
+	m.flacmd5, err = readBytes(r, 16)
+
+	return nil
+}
+
 func (m *metadataFLAC) FileType() FileType {
 	return FLAC
+}
+
+func (m *metadataFLAC) SampleRate() uint {
+	return m.sampleRate
+}
+
+func (m *metadataFLAC) Channels() uint {
+	return m.channels
+}
+
+func (m *metadataFLAC) BitDepth() uint {
+	return m.bitDepth
+}
+
+func (m *metadataFLAC) Duration() uint {
+	if m.sampleRate == 0 {
+		return 0
+	}
+	return uint(m.samples / uint64(m.sampleRate))
+}
+
+func FLACMD5Sum(m *metadataFLAC) []byte {
+	return m.flacmd5
 }

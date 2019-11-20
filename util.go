@@ -79,3 +79,15 @@ func readInt32LittleEndian(r io.Reader) (int, error) {
 	err := binary.Read(r, binary.LittleEndian, &n)
 	return int(n), err
 }
+
+func readUint32LittleEndian(r io.Reader) (uint32, error) {
+	var n uint32
+	err := binary.Read(r, binary.LittleEndian, &n)
+	return uint32(n), err
+}
+
+func readUint32BigEndian(r io.Reader) (uint32, error) {
+	var n uint32
+	err := binary.Read(r, binary.BigEndian, &n)
+	return uint32(n), err
+}

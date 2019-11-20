@@ -141,6 +141,21 @@ type Metadata interface {
 	// Comment returns the comment, or an empty string if unavailable.
 	Comment() string
 
+	// SampleRate returns samples per second per channel, e.g. 44100
+	SampleRate() uint
+
+	// Channels returns the number of discrete channels of audio
+	Channels() uint
+
+	// BitDepth returns the bits per sample
+	BitDepth() uint
+
+	// Duration in whole seconds
+	Duration() uint
+
+	// MD5Sum returns the FLAC specifc MD5 checksum of the audio, else nil
+	//FLACMD5Sum() *[16]byte
+
 	// Raw returns the raw mapping of retrieved tag names and associated values.
 	// NB: tag/atom names are not standardised between formats.
 	Raw() map[string]interface{}

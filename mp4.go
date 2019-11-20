@@ -370,3 +370,19 @@ func (m metadataMP4) Picture() *Picture {
 	p, _ := v.(*Picture)
 	return p
 }
+
+func (m metadataMP4) Channels() uint {
+	return 0
+}
+
+func (m metadataMP4) SampleRate() uint {
+	return 0
+}
+
+func (m metadataMP4) BitDepth() uint {
+	return 0
+}
+
+func (m metadataMP4) Duration() uint {
+	return 0
+}

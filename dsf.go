@@ -105,6 +105,26 @@ func (m metadataDSF) Comment() string {
 	return m.id3.Comment()
 }
 
+func (m metadataDSF) SampleRate() uint {
+	return 0
+}
+
+func (m metadataDSF) Channels() uint {
+	return 0
+}
+
+func (m metadataDSF) BitDepth() uint {
+	return 0
+}
+
+func (m metadataDSF) Duration() uint {
+	return 0
+}
+
+func (m metadataDSF) FLACMD5Sum() *[8]byte {
+	return nil
+}
+
 func (m metadataDSF) Raw() map[string]interface{} {
 	return m.id3.Raw()
 }
