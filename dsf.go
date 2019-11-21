@@ -30,7 +30,7 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	id3Pointer := getIntLittleEndian(n4)
+	id3Pointer := getUintLittleEndian(n4)
 
 	f, err := readString(r, 4)
 	if err != nil {
