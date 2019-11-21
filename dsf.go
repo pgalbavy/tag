@@ -32,11 +32,11 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 	}
 	id3Pointer := getIntLittleEndian(n4)
 
-	fmt, err := readString(r, 4)
+	f, err := readString(r, 4)
 	if err != nil {
 		return nil, err
 	}
-	if fmt != "fmt " {
+	if f != "fmt " {
 		return nil, errors.New("expected 'fmt '")
 	}
 
@@ -94,7 +94,6 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	samples := uint64(samplesHW << 32 + samplesLW)
-
 	_, err = r.Seek(int64(id3Pointer), io.SeekStart)
 	if err != nil {
 		return nil, err

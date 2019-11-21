@@ -64,7 +64,11 @@ func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		m.c[strings.ToLower(k)] = v
+		if _, ok := m.c[strings.ToLower(k)]; ok {
+			m.c[strings.ToLower(k)] = m.c[strings.ToLower(k)] + "\\\\" + v
+		} else {
+			m.c[strings.ToLower(k)] = v
+		}
 	}
 	return nil
 }
@@ -161,10 +165,18 @@ func (m *metadataVorbis) Format() Format {
 
 func (m *metadataVorbis) Raw() map[string]interface{} {
 	raw := make(map[string]interface{}, len(m.c) + 4)
-	raw["_sampleRate"] = m.sampleRate
-	raw["_samples"] = m.samples
-	raw["_bitdepth"] = m.bitDepth
-	raw["_channels"] = m.channels
+	if m.sampleRate > 0 {
+		raw["_sampleRate"] = m.sampleRate
+	}
+	if m.samples > 0 {
+		raw["_samples"] = m.samples
+	}
+	if m.channels > 0 {
+		raw["_channels"] = m.channels
+	}
+	if m.bitDepth > 0 {
+		raw["_bitdepth"] = m.bitDepth
+	}
 	for k, v := range m.c {
 		raw[k] = v
 	}
@@ -265,19 +277,22 @@ func (m *metadataVorbis) Picture() *Picture {
 }
 
 func (m *metadataVorbis) SampleRate() uint {
-	return 0
+	return m.sampleRate
 }
 
 func (m *metadataVorbis) Channels() uint {
-	return 0
+	return m.channels
 }
 
 func (m *metadataVorbis) BitDepth() uint {
-	return 0
+	return m.bitDepth
 }
 
 func (m *metadataVorbis) Duration() uint {
-	return 0
+	if m.sampleRate == 0 {
+		return 0
+	}
+	return uint(m.samples / uint64(m.sampleRate))
 }
 
 func (m *metadataVorbis) FLACMD5Sum() *[8]byte {

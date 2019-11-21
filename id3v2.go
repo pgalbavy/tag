@@ -49,6 +49,9 @@ type id3v2Header struct {
 	ExtendedHeader    bool
 	Experimental      bool
 	Size              int
+	SampleRate        uint
+	Channels          uint
+	Samples           uint64
 }
 
 // readID3v2Header reads the ID3v2 header from the given io.Reader.
@@ -404,17 +407,26 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	b, err := readString(r, 4)
-	if err != nil {
-		return nil,err
+
+	// if EOF then we have skipped an ID3 block at the end of a file, such as DSF
+	if err != io.EOF {
+		if err != nil {
+			return nil,err
+		}
+
+		_, err = r.Seek(-4, io.SeekCurrent)
+		if err != nil {
+			return nil,err
+		}
+
+		if (b == "fLaC") {
+			return ReadFLACTags(r)
+		}
 	}
 
-	_, err = r.Seek(-4, io.SeekCurrent)
+	_, err = r.Seek(int64(-h.Size), io.SeekCurrent)
 	if err != nil {
 		return nil,err
-	}
-
-	if (b == "fLaC") {
-		return ReadFLACTags(r)
 	}
 
 	var ur io.Reader = r
@@ -427,21 +439,21 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	var channels uint = 2
-	var samples uint64 = 0
-	var sampleRate uint = 44100
+	h.Channels = 2
+	h.Samples = 0
+	h.SampleRate = 44100
 
 	mp3, err := getMp3Infos(r, false)
 	if err == nil {
 		if mp3.Mode == "Mono" {
-			channels = 1
+			h.Channels = 1
 		}
 
-		sampleRate = mp3.Sampling
-		samples = uint64(mp3.Length) * uint64(mp3.Sampling)
+		h.SampleRate = mp3.Sampling
+		h.Samples = uint64(mp3.Length) * uint64(mp3.Sampling)
 	}
 
-	return metadataID3v2{sampleRate: sampleRate, bitDepth: 16, channels: channels, samples: samples, header: h, frames: f}, nil
+	return metadataID3v2{header: h, frames: f}, nil
 }
 
 var id3v2genreRe = regexp.MustCompile(`(.*[^(]|.* |^)\(([0-9]+)\) *(.*)$`)
