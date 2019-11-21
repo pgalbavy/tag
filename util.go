@@ -32,6 +32,15 @@ func getInt(b []byte) int {
 	return n
 }
 
+func getUint(b []byte) uint {
+	var n uint
+	for _, x := range b {
+		n = n << 8
+		n |= uint(x)
+	}
+	return n
+}
+
 func getIntLittleEndian(b []byte) int {
 	var n int
 	for i := len(b) - 1; i >= 0; i-- {
