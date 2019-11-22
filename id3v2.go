@@ -424,7 +424,7 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		}
 	}
 
-	_, err = r.Seek(int64(-h.Size), io.SeekCurrent)
+	_, err = r.Seek(-int64(h.Size), io.SeekCurrent)
 	if err != nil {
 		return nil,err
 	}
