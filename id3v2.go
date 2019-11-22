@@ -48,15 +48,15 @@ type id3v2Header struct {
 	Unsynchronisation bool
 	ExtendedHeader    bool
 	Experimental      bool
-	Size              int
 	SampleRate        uint
 	Channels          uint
 	Samples           uint64
+	Size              uint
 }
 
 // readID3v2Header reads the ID3v2 header from the given io.Reader.
 // offset it number of bytes of header that was read
-func readID3v2Header(r io.Reader) (h *id3v2Header, offset int, err error) {
+func readID3v2Header(r io.Reader) (h *id3v2Header, offset uint, err error) {
 	offset = 10
 	b, err := readBytes(r, offset)
 	if err != nil {
@@ -88,7 +88,7 @@ func readID3v2Header(r io.Reader) (h *id3v2Header, offset int, err error) {
 		Unsynchronisation: getBit(b[2], 7),
 		ExtendedHeader:    getBit(b[2], 6),
 		Experimental:      getBit(b[2], 5),
-		Size:              get7BitChunkedInt(b[3:7]),
+		Size:              uint(get7BitChunkedInt(b[3:7])),
 	}
 
 	if h.ExtendedHeader {
@@ -99,7 +99,7 @@ func readID3v2Header(r io.Reader) (h *id3v2Header, offset int, err error) {
 				return nil, 0, fmt.Errorf("expected to read 4 bytes (ID3v23 extended header len): %v", err)
 			}
 			// skip header, size is excluding len bytes
-			extendedHeaderSize := getInt(b)
+			extendedHeaderSize := uint(getInt(b))
 			_, err = readBytes(r, extendedHeaderSize)
 			if err != nil {
 				return nil, 0, fmt.Errorf("expected to read %d bytes (ID3v23 skip extended header): %v", extendedHeaderSize, err)
@@ -111,7 +111,7 @@ func readID3v2Header(r io.Reader) (h *id3v2Header, offset int, err error) {
 				return nil, 0, fmt.Errorf("expected to read 4 bytes (ID3v24 extended header len): %v", err)
 			}
 			// skip header, size is synchsafe int including len bytes
-			extendedHeaderSize := get7BitChunkedInt(b) - 4
+			extendedHeaderSize := uint(get7BitChunkedInt(b)) - 4
 			_, err = readBytes(r, extendedHeaderSize)
 			if err != nil {
 				return nil, 0, fmt.Errorf("expected to read %d bytes (ID3v24 skip extended header): %v", extendedHeaderSize, err)
@@ -182,12 +182,12 @@ func readID3v24FrameFlags(r io.Reader) (*id3v2FrameFlags, error) {
 
 }
 
-func readID3v2_2FrameHeader(r io.Reader) (name string, size int, headerSize int, err error) {
+func readID3v2_2FrameHeader(r io.Reader) (name string, size uint, headerSize uint, err error) {
 	name, err = readString(r, 3)
 	if err != nil {
 		return
 	}
-	size, err = readInt(r, 3)
+	size, err = readUint(r, 3)
 	if err != nil {
 		return
 	}
@@ -195,12 +195,12 @@ func readID3v2_2FrameHeader(r io.Reader) (name string, size int, headerSize int,
 	return
 }
 
-func readID3v2_3FrameHeader(r io.Reader) (name string, size int, headerSize int, err error) {
+func readID3v2_3FrameHeader(r io.Reader) (name string, size uint, headerSize uint, err error) {
 	name, err = readString(r, 4)
 	if err != nil {
 		return
 	}
-	size, err = readInt(r, 4)
+	size, err = readUint(r, 4)
 	if err != nil {
 		return
 	}
@@ -208,12 +208,12 @@ func readID3v2_3FrameHeader(r io.Reader) (name string, size int, headerSize int,
 	return
 }
 
-func readID3v2_4FrameHeader(r io.Reader) (name string, size int, headerSize int, err error) {
+func readID3v2_4FrameHeader(r io.Reader) (name string, size uint, headerSize uint, err error) {
 	name, err = readString(r, 4)
 	if err != nil {
 		return
 	}
-	size, err = read7BitChunkedInt(r, 4)
+	size, err = read7BitChunkedUint(r, 4)
 	if err != nil {
 		return
 	}
@@ -222,13 +222,13 @@ func readID3v2_4FrameHeader(r io.Reader) (name string, size int, headerSize int,
 }
 
 // readID3v2Frames reads ID3v2 frames from the given reader using the ID3v2Header.
-func readID3v2Frames(r io.Reader, offset int, h *id3v2Header) (map[string]interface{}, error) {
+func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 
 	for offset < h.Size {
 		var err error
 		var name string
-		var size, headerSize int
+		var size, headerSize uint
 		var flags *id3v2FrameFlags
 
 		switch h.Version {
@@ -272,7 +272,7 @@ func readID3v2Frames(r io.Reader, offset int, h *id3v2Header) (map[string]interf
 
 		if flags != nil {
 			if flags.Compression {
-				_, err = read7BitChunkedInt(r, 4) // read 4
+				_, err = read7BitChunkedUint(r, 4) // read 4
 				if err != nil {
 					return nil, err
 				}
@@ -284,7 +284,7 @@ func readID3v2Frames(r io.Reader, offset int, h *id3v2Header) (map[string]interf
 				if err != nil {
 					return nil, err
 				}
-				size -= 1
+				size--
 			}
 		}
 

@@ -26,11 +26,10 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	n4, err := readBytes(r, 8)
+	id3Pointer, err := readUint64LittleEndian(r)
 	if err != nil {
 		return nil, err
 	}
-	id3Pointer := getUintLittleEndian(n4)
 
 	f, err := readString(r, 4)
 	if err != nil {
@@ -40,12 +39,7 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, errors.New("expected 'fmt '")
 	}
 
-	n4, err = readBytes(r, 8)
-	if err != nil {
-		return nil, err
-	}
-	fsize := getIntLittleEndian(n4)
-
+	fsize, err := readUint64LittleEndian(r)
 	if fsize != 52 {
 		return nil, errors.New("fmt section not 52 bytes long")
 	}
