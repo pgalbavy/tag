@@ -360,6 +360,9 @@ func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]inter
 			}
 			result[rawName] = p
 
+		case name == "PRIV":
+			// ignore, even for raw tags
+
 		default:
 			result[rawName] = b
 		}
