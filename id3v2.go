@@ -5,6 +5,7 @@
 package tag
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -272,11 +273,34 @@ func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]inter
 
 		if flags != nil {
 			if flags.Compression {
-				_, err = read7BitChunkedUint(r, 4) // read 4
-				if err != nil {
+				switch h.Version {
+				case ID3v2_3:
+					// No data length indicator defined.
+					if _, err := read7BitChunkedUint(r, 4); err != nil { // read 4
+						return nil, err
+					}
+					size -= 4
+
+				case ID3v2_4:
+					// Must have a data length indicator (to give the size) if compression is enabled.
+					if !flags.DataLengthIndicator {
+						return nil, errors.New("compression without data length indicator")
+					}
+
+				default:
+					return nil, fmt.Errorf("unsupported compression flag used in %v", h.Version)
+				}
+			}
+
+			if flags.DataLengthIndicator {
+				if h.Version == ID3v2_3 {
+					return nil, fmt.Errorf("data length indicator set but not defined for %v", ID3v2_3)
+				}
+
+				size, err = read7BitChunkedUint(r, 4)
+				if err != nil { // read 4
 					return nil, err
 				}
-				size -= 4
 			}
 
 			if flags.Encryption {
@@ -342,7 +366,7 @@ func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]inter
 		case name == "COMM" || name == "COM" || name == "USLT" || name == "ULT":
 			t, err := readTextWithDescrFrame(b, true, true) // both lang and enc
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("could not read %q (%q): %v", name, rawName, err)
 			}
 			result[rawName] = t
 
